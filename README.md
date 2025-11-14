@@ -11,6 +11,62 @@ This project provides a comprehensive LangGraph agent generation system that:
 - Provides intelligent code revision using Claude AI
 - Offers complete control and debugging at each step
 
+## Architecture
+
+Modular LangGraph workflow with direct E2B + Claude integration.
+
+![Architecture Flowchart](./images/architecture-flowchart.png)
+
+### Workflow Steps
+
+#### `create_sandbox`
+- Creates E2B sandbox environment
+- Initializes state counters
+
+#### `clone_repository`
+- Clones GitHub repository into sandbox using token authentication
+- Cleans up existing directories if present
+
+#### `generate_code_with_claude`
+- Uses Claude API and prompt template
+- Injects `input_json` and blank langgraph template into the prompt
+- Produces Python LangGraph code
+
+#### `run_code`
+- Detects and installs required packages
+- Executes generated code inside sandbox
+- Captures success/failure and error details
+
+#### `revise_code_with_claude` (conditional)
+- **Trigger**: Execution fails and attempts < 3
+- **Action**: Claude revises code based on error
+- Loops back to `run_code`
+
+#### `write_code_to_file` (success path)
+- Saves code locally
+- Saves code into sandbox for git operations
+
+#### `write_code_to_file_local_only` (failure path)
+- Saves code locally only
+- Skips git operations
+
+#### `git_operations` (success path only)
+- Configures git identity
+- Checks out or creates target branch
+- Performs proactive git pull to avoid conflicts
+- Commits with Claude-generated commit message
+- Pushes changes with fallback strategies
+
+#### `cleanup_sandbox`
+- Terminates sandbox
+- Determines overall success status
+
+### Flow Logic
+
+- **Success Path**: Generate → Run → Write → Git → Cleanup
+- **Failure Path (< 3 attempts)**: Generate → Run → Revise → Retry
+- **Failure Path (3 attempts)**: Generate → Run → Write Local → Cleanup
+
 ## Project Structure
 
 ```
