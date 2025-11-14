@@ -1,0 +1,10 @@
+{
+  "candidate": "C:\\Users\\Naomi\\OneDrive\\Desktop\\FINTOR\\vibekit\\prompts\\candidates\\candidate2.md",
+  "input": "C:\\Users\\Naomi\\OneDrive\\Desktop\\FINTOR\\vibekit\\benchmarks\\inputs\\sample1.json",
+  "files": [
+    {
+      "source_path": "/home/user/workspace/graph.py",
+      "saved_as": "C:\\Users\\Naomi\\OneDrive\\Desktop\\FINTOR\\vibekit\\debug\\optimizer\\outputs\\candidate2\\sample1\\code_0_graph.py"
+    }
+  ]
+}

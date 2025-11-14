@@ -1,0 +1,225 @@
+{
+  "metadata": {
+    "name": "lgUserRegistration",
+    "description": "User Registration Workflow - Complete signup process",
+    "source_template": "LG-blank",
+    "target_agent": "LG-user-registration",
+    "workflow_type": "linear"
+  },
+  "configuration": {
+    "graph_name": "lgUserRegistration",
+    "os_url": "https://fintor-demo.ngrok.app",
+    "default_username": "testuser",
+    "min_password_length": 8,
+    "note": "Complete user registration workflow with validation"
+  },
+  "state_modifications": {
+    "additional_fields": {
+      "username": {
+        "type": "str",
+        "default": "",
+        "description": "Username for registration"
+      },
+      "email": {
+        "type": "str", 
+        "default": "",
+        "description": "User email address"
+      },
+      "password": {
+        "type": "str",
+        "default": "",
+        "description": "User password"
+      },
+      "registration_status": {
+        "type": "str",
+        "default": "pending",
+        "description": "Current registration status"
+      },
+      "validation_errors": {
+        "type": "List[str]",
+        "default": [],
+        "description": "List of validation errors"
+      },
+      "user_id": {
+        "type": "Union[int, None]",
+        "default": null,
+        "description": "Generated user ID after successful registration"
+      }
+    },
+    "note": "Extended state for user registration tracking"
+  },
+  "additional_functions": {
+    "validate_email": {
+      "description": "Validate email format using regex pattern",
+      "parameters": ["state", "config"],
+      "return_type": "State",
+      "logic": "Check if email contains @ and valid domain format",
+      "sets_fields": ["validation_errors", "current_node", "status"],
+      "implementation_note": "Use simple regex for email validation"
+    },
+    "validate_password": {
+      "description": "Validate password meets security requirements",
+      "parameters": ["state", "config"],
+      "return_type": "State", 
+      "logic": "Check password length >= 8 and contains alphanumeric characters",
+      "sets_fields": ["validation_errors", "current_node", "status"],
+      "implementation_note": "Basic password strength validation"
+    },
+    "check_username_available": {
+      "description": "Simulate checking if username is available",
+      "parameters": ["state", "config"],
+      "return_type": "State",
+      "logic": "Simple simulation - reject if username is 'admin' or 'test'",
+      "sets_fields": ["validation_errors", "current_node", "status"],
+      "implementation_note": "Mock username availability check"
+    }
+  },
+  "subgraphs": {
+    "input_collection": {
+      "name": "input_collection",
+      "type": "linear",
+      "description": "Collect user input for registration",
+      "nodes": [
+        {
+          "function_name": "click_register_tab",
+          "type": "click",
+          "description": "Click on Register tab",
+          "parameters": { "x": 200, "y": 80 },
+          "order": 1
+        },
+        {
+          "function_name": "wait_form_load",
+          "type": "wait",
+          "description": "Wait for registration form to load",
+          "parameters": { "duration": 2 },
+          "order": 2
+        },
+        {
+          "function_name": "input_username",
+          "type": "input",
+          "description": "Enter username",
+          "parameters": { "text": "state.username" },
+          "order": 3
+        },
+        {
+          "function_name": "input_email",
+          "type": "input",
+          "description": "Enter email address",
+          "parameters": { "text": "state.email" },
+          "order": 4
+        },
+        {
+          "function_name": "input_password",
+          "type": "input",
+          "description": "Enter password",
+          "parameters": { "text": "state.password" },
+          "order": 5
+        },
+        {
+          "function_name": "input_confirm_password",
+          "type": "input",
+          "description": "Confirm password",
+          "parameters": { "text": "state.password" },
+          "order": 6
+        }
+      ]
+    },
+    "validation_workflow": {
+      "name": "validation_workflow",
+      "type": "linear",
+      "description": "Validate all user inputs",
+      "nodes": [
+        {
+          "function_name": "validate_email",
+          "type": "special",
+          "description": "Validate email format",
+          "order": 1
+        },
+        {
+          "function_name": "validate_password",
+          "type": "special",
+          "description": "Validate password strength",
+          "order": 2
+        },
+        {
+          "function_name": "check_username_available",
+          "type": "special", 
+          "description": "Check username availability",
+          "order": 3
+        },
+        {
+          "function_name": "wait_validation",
+          "type": "wait",
+          "description": "Wait for validation processing",
+          "parameters": { "duration": 1 },
+          "order": 4
+        }
+      ]
+    },
+    "submission_workflow": {
+      "name": "submission_workflow",
+      "type": "linear",
+      "description": "Submit registration if validation passes",
+      "nodes": [
+        {
+          "function_name": "click_terms_checkbox",
+          "type": "click",
+          "description": "Accept terms and conditions",
+          "parameters": { "x": 50, "y": 400 },
+          "order": 1
+        },
+        {
+          "function_name": "click_submit_button",
+          "type": "click", 
+          "description": "Click Submit Registration button",
+          "parameters": { "x": 250, "y": 450 },
+          "order": 2
+        },
+        {
+          "function_name": "wait_submission",
+          "type": "wait",
+          "description": "Wait for registration processing",
+          "parameters": { "duration": 3 },
+          "order": 3
+        },
+        {
+          "function_name": "click_confirmation_ok",
+          "type": "click",
+          "description": "Acknowledge success message",
+          "parameters": { "x": 300, "y": 200 },
+          "order": 4
+        }
+      ]
+    }
+  },
+  "main_graph_flow": {
+    "type": "linear",
+    "subgraph_order": [
+      "input_collection",
+      "validation_workflow", 
+      "submission_workflow"
+    ],
+    "note": "Linear flow: collect inputs → validate → submit registration"
+  },
+  "generation_instructions": {
+    "template_base": "LG-blank/src/agent/graph.py",
+    "modifications_needed": [
+      "Add email validation function with regex",
+      "Add password validation function",
+      "Add username availability check function", 
+      "Update State model with registration fields",
+      "Update OS_URL to demo environment",
+      "Create node functions for all three workflows",
+      "Update graph name to 'lgUserRegistration'",
+      "Add proper error handling for validation failures"
+    ],
+    "action_types_available": [
+      "click - uses click_action function",
+      "wait - uses wait_action function",
+      "input - uses input_action function", 
+      "special - custom function implementation"
+    ],
+    "linear_flow_implementation": "Each subgraph connects linearly, with validation determining flow continuation",
+    "validation_notes": "Validation functions should populate validation_errors list and update registration_status"
+  }
+}

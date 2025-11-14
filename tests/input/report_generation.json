@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "name": "lgReportGeneration", 
+    "description": "Report Generation Workflow - Create and download reports",
+    "source_template": "LG-blank",
+    "target_agent": "LG-report-generation",
+    "workflow_type": "linear"
+  },
+  "configuration": {
+    "graph_name": "lgReportGeneration",
+    "os_url": "https://fintor-reports.ngrok.app",
+    "default_report_type": "monthly_summary",
+    "max_date_range_days": 90,
+    "output_format": "PDF",
+    "note": "Automated report generation and download workflow"
+  },
+  "state_modifications": {
+    "additional_fields": {
+      "report_type": {
+        "type": "str",
+        "default": "monthly_summary", 
+        "description": "Type of report to generate"
+      },
+      "start_date": {
+        "type": "str",
+        "default": "",
+        "description": "Report start date (YYYY-MM-DD format)"
+      },
+      "end_date": {
+        "type": "str", 
+        "default": "",
+        "description": "Report end date (YYYY-MM-DD format)"
+      },
+      "filters": {
+        "type": "Dict[str, Any]",
+        "default": {},
+        "description": "Additional report filters"
+      },
+      "report_id": {
+        "type": "Union[str, None]",
+        "default": null,
+        "description": "Generated report ID"
+      },
+      "download_url": {
+        "type": "Union[str, None]",
+        "default": null,
+        "description": "URL for downloading generated report"
+      },
+      "generation_progress": {
+        "type": "int",
+        "default": 0,
+        "description": "Report generation progress percentage"
+      }
+    },
+    "note": "State tracking for report generation process"
+  },
+  "additional_functions": {
+    "validate_date_range": {
+      "description": "Validate that date range is within allowed limits",
+      "parameters": ["state", "config"],
+      "return_type": "State",
+      "logic": "Check that date range is not more than 90 days and end_date > start_date",
+      "sets_fields": ["current_node", "status"],
+      "implementation_note": "Parse dates and validate range constraints"
+    },
+    "calculate_report_size": {
+      "description": "Estimate report size based on date range and type",
+      "parameters": ["state", "config"],
+      "return_type": "State", 
+      "logic": "Simple calculation based on days in range and report type complexity",
+      "sets_fields": ["current_node", "status"],
+      "implementation_note": "Mock calculation for demonstration"
+    }
+  },
+  "subgraphs": {
+    "report_configuration": {
+      "name": "report_configuration",
+      "type": "linear",
+      "description": "Configure report parameters",
+      "nodes": [
+        {
+          "function_name": "click_reports_menu",
+          "type": "click",
+          "description": "Click Reports menu item",
+          "parameters": { "x": 100, "y": 120 },
+          "order": 1
+        },
+        {
+          "function_name": "click_generate_report",
+          "type": "click", 
+          "description": "Click Generate New Report button",
+          "parameters": { "x": 250, "y": 180 },
+          "order": 2
+        },
+        {
+          "function_name": "select_report_type",
+          "type": "click",
+          "description": "Select report type dropdown",
+          "parameters": { "x": 200, "y": 220 },
+          "order": 3
+        },
+        {
+          "function_name": "input_start_date",
+          "type": "input",
+          "description": "Enter start date",
+          "parameters": { "text": "state.start_date" },
+          "order": 4
+        },
+        {
+          "function_name": "input_end_date",
+          "type": "input",
+          "description": "Enter end date", 
+          "parameters": { "text": "state.end_date" },
+          "order": 5
+        }
+      ]
+    },
+    "validation_and_preview": {
+      "name": "validation_and_preview",
+      "type": "linear",
+      "description": "Validate settings and preview report",
+      "nodes": [
+        {
+          "function_name": "validate_date_range",
+          "type": "special",
+          "description": "Validate date range constraints",
+          "order": 1
+        },
+        {
+          "function_name": "calculate_report_size", 
+          "type": "special",
+          "description": "Calculate estimated report size",
+          "order": 2
+        },
+        {
+          "function_name": "click_preview_button",
+          "type": "click",
+          "description": "Click Preview Report button",
+          "parameters": { "x": 180, "y": 300 },
+          "order": 3
+        },
+        {
+          "function_name": "wait_preview_load",
+          "type": "wait",
+          "description": "Wait for preview to load",
+          "parameters": { "duration": 2 },
+          "order": 4
+        }
+      ]
+    },
+    "generation_and_download": {
+      "name": "generation_and_download",
+      "type": "linear",
+      "description": "Generate and download the report",
+      "nodes": [
+        {
+          "function_name": "click_generate_final",
+          "type": "click",
+          "description": "Click Generate Report button",
+          "parameters": { "x": 300, "y": 350 },
+          "order": 1
+        },
+        {
+          "function_name": "wait_generation_start",
+          "type": "wait", 
+          "description": "Wait for generation to start",
+          "parameters": { "duration": 1 },
+          "order": 2
+        },
+        {
+          "function_name": "monitor_progress",
+          "type": "wait",
+          "description": "Monitor generation progress",
+          "parameters": { "duration": 5 },
+          "order": 3
+        },
+        {
+          "function_name": "click_download",
+          "type": "click",
+          "description": "Click Download Report button",
+          "parameters": { "x": 250, "y": 400 },
+          "order": 4
+        },
+        {
+          "function_name": "wait_download_start",
+          "type": "wait",
+          "description": "Wait for download to initiate", 
+          "parameters": { "duration": 2 },
+          "order": 5
+        },
+        {
+          "function_name": "click_close_dialog",
+          "type": "click",
+          "description": "Close success dialog",
+          "parameters": { "x": 400, "y": 100 },
+          "order": 6
+        }
+      ]
+    }
+  },
+  "main_graph_flow": {
+    "type": "linear",
+    "subgraph_order": [
+      "report_configuration",
+      "validation_and_preview",
+      "generation_and_download"
+    ],
+    "note": "Linear flow: configure → validate/preview → generate/download"
+  },
+  "generation_instructions": {
+    "template_base": "LG-blank/src/agent/graph.py",
+    "modifications_needed": [
+      "Add date range validation function",
+      "Add report size calculation function",
+      "Update State model with report-specific fields",
+      "Update OS_URL to reports environment",
+      "Create node functions for all workflow steps",
+      "Update graph name to 'lgReportGeneration'",
+      "Add progress tracking capabilities",
+      "Handle file download completion detection"
+    ],
+    "action_types_available": [
+      "click - uses click_action function",
+      "wait - uses wait_action function",
+      "input - uses input_action function",
+      "special - custom function implementation"
+    ],
+    "linear_flow_implementation": "Sequential subgraph execution with validation checkpoints",
+    "special_considerations": [
+      "Date validation should handle various date formats",
+      "Progress monitoring may require polling mechanism",
+      "Download completion detection is implementation-specific"
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "labels": {
+    "A": "AI Agent",
+    "B": "Human Benchmark"
+  },
+  "files": {
+    "A": "C:\\Users\\Naomi\\OneDrive\\Desktop\\FINTOR\\vibekit\\tests\\output\\agentTestOutput.json",
+    "B": "C:\\Users\\Naomi\\OneDrive\\Desktop\\FINTOR\\vibekit\\tests\\output\\creditReportOutput.json"
+  },
+  "manual_exclude": [
+    "system32\\\\cmd.exe",
+    "confirm stop recording",
+    "program manager"
+  ],
+  "A_metrics": {
+    "total_events_ex_manual": 65,
+    "typed_text_best_effort": "",
+    "keystrokes_non_shift": 0,
+    "clicks_total": 0,
+    "clicks_pre_enter": 0,
+    "clicks_post_enter": 0,
+    "first_enter_index": null,
+    "active_duration_seconds": 173.56014704704285
+  },
+  "B_metrics": {
+    "total_events_ex_manual": 62,
+    "typed_text_best_effort": "",
+    "keystrokes_non_shift": 0,
+    "clicks_total": 0,
+    "clicks_pre_enter": 0,
+    "clicks_post_enter": 0,
+    "first_enter_index": null,
+    "active_duration_seconds": 175.9131259918213
+  },
+  "comparison": {
+    "typed_text_equal": true,
+    "keystrokes_non_shift_delta": 0,
+    "clicks_total_delta": 0,
+    "clicks_pre_enter_delta": 0,
+    "clicks_post_enter_delta": 0,
+    "first_enter_index_delta": null,
+    "active_duration_seconds_delta": -2.3529789447784424
+  },
+  "llm_analysis": {
+    "provider": "openai",
+    "analysis": "Summary\n- The AI agent completed the workflow slightly faster (173.6s vs 175.9s, −1.3%) but generated more events (65 vs 62, +4.8%). No text inputs or clicks were recorded for either actor; text-match is exact (both typed nothing).\n- Interpretation: the agent is functionally correct and slightly quicker, but it uses more micro-actions/events to reach the same outcome. That suggests extra internal activity (polling, redundant checks, state probes, UI element reads, or finer-grained event instrumentation) that increases interaction complexity and fragility.\n\nPerformance assessment\n- Speed efficiency: Agent is marginally faster (−1.3%). The advantage is small and likely not meaningful in isolation, but it shows no gross latency problems.\n- Interaction efficiency: Human is more interaction-efficient (62 events vs 65). The AI uses ~5% more events; this is a modest inefficiency but can compound across larger workflows or at scale.\n- Task completion: Both achieved the same outcome (task completed with exact input parity). No functional correctness issues observed.\n\nBehavioral analysis\n- Interaction patterns: The agent likely performs more short-lived events (extra checks, DOM queries, element reads, focus changes, or non-click interactions) rather than additional high-level actions. The fact that overall time is similar implies those events are quick.\n- Navigation strategy: Agent appears to follow a valid path but with additional micro-steps. Possibilities:\n  - Frequent polling for element readiness instead of using event-driven or longer explicit waits.\n  - Repeated element selection/lookup rather than caching references.\n  - Extra makeup actions (like toggling or focus shifts) to ensure state, rather than relying on stable selectors.\n- Error recovery: With no visible retries or longer duration, there’s no strong evidence of prolonged retries or hesitation. The extra events may be preventative checks rather than reactive error recoveries.\n\nQuantitative insights\n- Metrics favoring agent:\n  - Duration: agent slightly faster (small win).\n- Metrics favoring human:\n  - Total events: human uses fewer events (more efficient interaction footprint).\n- Concerning gaps:\n  - Event count difference (+4.8%) signals inefficiency and potential fragility — small now, scalable risk later.\n- Timing patterns reveal:\n  - Agent produces a higher event density (more events per second). Short-duration, high-frequency events increase surface area for flakiness (timing/race conditions) and incur overhead (CPU, network if remote).\n\nActionable recommendations (prioritized)\n1. Get an event-type breakdown (high priority)\n   - Instrument/collect the agent’s event log with event types and durations (e.g., DOM queries, waits, focus calls, reads, scrolls, presence checks).\n   - Goal: identify the specific event classes that make up the +3 extra events.\n\n2. Reduce redundant polling/queries (high)\n   - Replace frequent short polling with:\n     - Event-driven waits (observer callbacks) or explicit waits with reasonable timeouts.\n     - Backoff/limited retries (e.g., exponential backoff) when polling is required.\n   - Measurable target: reduce DOM-query events by ≥50% in next run.\n\n3. Cache element references and minimize lookups (medium-high)\n   - When the workflow uses the same element multiple times, obtain the handle once and reuse it rather than re-querying.\n   - Goal: reduce repeated selector hits and network/IPC latency.\n\n4. Batch or coalesce micro-actions (medium)\n   - Combine logically contiguous micro-steps into a single higher-level action where safe (e.g., set multiple properties before committing a change).\n   - Example: instead of focus → read → focus → read, perform a single read with appropriate guards.\n\n5. Use higher-level primitives where possible (medium)\n   - Prefer “navigate to” or “submit” primitives that encapsulate several lower-level events, reducing event count and simplifying recovery semantics.\n\n6. Add explicit, conservative assertion points instead of repeated checks (medium)\n   - Put a single assert/check at a known stable synchronization point rather than many short checks scattered across the flow.\n\n7. Penalize event count in model training / policy selection (longer-term)\n   - If the agent is learned, add a small negative reward for extra events or per-event cost in RL training or use imitation learning from the human trajectories emphasizing lower event counts.\n   - Supplement training data with human demonstrations annotated for minimal, robust action sequences.\n\n8. Robustness tests and telemetry (high)\n   - Add tests under variable latency and CPU conditions to see if the extra events are hiding flakiness.\n   - Track selector failures, retries, average event latency, idle vs active time.\n   - Metric goals: event count within ±2% of human baseline and duration within ±5% after fixes.\n\n9. Logging and root-cause triage process (high)\n   - Create a triage workflow: when total-events exceeds baseline by X% (e.g., 3%), automatically produce an event-diff report showing which events are extra and when they occur.\n\n10. Low-hanging UI-level optimizations\n   - Debounce interactions that generate rapid repeated events (e.g., avoid spurious focus/blur cycles).\n   - Limit visual/analytics probes that aren't necessary for task success.\n\nTraining/data/model adjustments\n- Imitation learning: incorporate the human benchmark trajectories as gold-standard demonstrations. Emphasize minimal sequences.\n- Reward shaping: include event-cost penalty and a robustness bonus (successful completion with fewer retries).\n- Curriculum: train on simpler flows emphasizing no-redundancy patterns, then scale to complex flows.\n- Data augmentation: include scenarios with variable timing to encourage event consolidation rather than brittle polling.\n\nSuggested instrumentation/metrics to add\n- Event type breakdown and per-event durations.\n- Number of selector queries and cache hits/misses.\n- Retry counts and selector failure rates.\n- Active vs idle time (how much time spent waiting vs acting).\n- Events per second and distribution histogram.\n- Resource usage (CPU, memory, network calls) correlated with events.\n\nOverall verdict & risk assessment\n- Readiness: Needs work. Functionally correct and slightly faster, but the agent is less interaction-efficient and therefore potentially more fragile and wasteful at scale.\n- Confidence level: Medium. Small differences in this single-run benchmark are meaningful for detecting inefficiency, but further runs and event breakdowns are required to be certain.\n- Deployment risk: Low-to-moderate for simple stable UIs; moderate-to-high risk for complex, latency-sensitive, or frequently changing UIs (because extra micro-events increase fragility and maintenance burden).\n\nNext steps (concrete plan)\n1. Collect detailed event-type logs for the agent run (goal: within 48 hours).\n2. Implement quick fixes: cache elements, replace aggressive polling with explicit waits; re-run benchmark.\n3. If event reduction goal (≤+2% events vs human) not met, introduce training adjustments (imitation + event-cost reward).\n4. Add robustness tests under varied latency and re-evaluate.\n\nIf you want, I can:\n- Analyze a sampled event log and highlight the exact redundant events to remove.\n- Draft instrumentation queries/report templates to capture the event-type breakdown.\n- Propose precise reward-shaping formulas for training (if this is a learned agent)."
+  }
+}

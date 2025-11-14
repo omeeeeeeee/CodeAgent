@@ -1,0 +1,45 @@
+Recording Comparison Report
+
+Files
+Label A,AI Agent
+File A,C:\Users\Naomi\OneDrive\Desktop\FINTOR\vibekit\tests\output\agentTestOutput.json
+Label B,Human Benchmark
+File B,C:\Users\Naomi\OneDrive\Desktop\FINTOR\vibekit\tests\output\creditReportOutput.json
+
+Metric,A,B,Delta (A-B)
+Events (ex. manual),65,62,+3
+Keystrokes non-Shift,0,0,+0
+Clicks total,0,0,+0
+Clicks pre-Enter,0,0,+0
+Clicks post-Enter,0,0,+0
+First Enter index,N/A,N/A,N/A
+Active duration (s),173.6 s,175.9 s,-2.4
+
+Typed Text Analysis
+Text Equal?,YES
+A typed,''
+B typed,''
+
+=== CSV REPORT EXPLANATION ===
+
+METRICS DESCRIPTION:
+• Events (ex. manual),Total UI events excluding manual/system actions
+• Keystrokes non-Shift,Number of keystroke events (excluding Shift keys)
+• Clicks total,Total number of mouse click events
+• Clicks pre-Enter,Mouse clicks before first Enter key press
+• Clicks post-Enter,Mouse clicks after first Enter key press
+• First Enter index,Position of first Enter key in event sequence
+• Active duration,Time from first to last event (seconds)
+
+INTERPRETATION GUIDE:
+• Positive Delta (A-B),A performed more actions/took longer than B
+• Negative Delta (A-B),A performed fewer actions/was faster than B
+• Lower event counts,Generally indicate higher efficiency
+• Shorter duration,Usually indicates better performance
+• Text match = YES,Both recordings produced same text input
+• Text match = NO,Different text inputs detected (accuracy issue)
+
+PERFORMANCE INDICATORS:
+• Efficiency,Fewer events + shorter duration = more efficient
+• Accuracy,Text match + similar click patterns = higher accuracy
+• Consistency,Similar event distribution = more predictable behavior
